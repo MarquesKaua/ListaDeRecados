@@ -1,39 +1,81 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
 
-function App() {
+import api from "./api";
+import Login from "./Login";
+import { useEffect, useState } from "react";
+
+  function App() {
+  const [user, setUser] = useState(null);
   const [recados, setRecados] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
+  const [erro, setErro] = useState("");
 
   useEffect(() => {
-    carregarRecados();
-  }, []);
+    if (user) carregarRecados();
+  }, [user]);
 
   async function carregarRecados() {
-    const res = await axios.get("http://localhost:8000/api/recados");
+  try {
+    const res = await api.get("/recados");
     setRecados(res.data);
+  } catch (err) {
+    if (err.response?.status === 401) {
+      // token inválido/expirado: desloga e manda pra tela de login
+      localStorage.removeItem("token");
+      setUser(null);
+    } else {
+      setErro("Não foi possível carregar os recados.");
+    }
   }
+}
 
   async function criarRecado(e) {
     e.preventDefault();
-    await axios.post("http://localhost:8000/api/recados", {
-      titulo,
-      texto,
-      user_id: 1
-    });
-    setTitulo("");
-    setTexto("");
-    carregarRecados();
+    setErro("");
+
+    if (!titulo.trim() || !texto.trim()) {
+      setErro("Preencha o título e o texto antes de salvar.");
+      return;
+    }
+
+    try {
+      await api.post("/recados", { titulo, texto });
+      setTitulo("");
+      setTexto("");
+      carregarRecados();
+    } catch (err) {
+      setErro(
+        err.response?.data?.message ||
+          "Não foi possível salvar o recado. Tenta de novo."
+      );
+    }
   }
 
   async function deletarRecado(id) {
-    await axios.delete(`http://localhost:8000/api/recados/${id}`);
-    carregarRecados();
+    try {
+      await api.delete(`/recados/${id}`);
+      carregarRecados();
+    } catch (err) {
+      setErro("Não foi possível apagar o recado.");
+    }
   }
 
-  // leve rotação alternada nos cartões, pra parecer post-its colados na mesa
+ async function sair() {
+  try {
+    await api.post("/logout");
+  } catch (err) {
+    // mesmo se falhar, segue limpando localmente
+  }
+  localStorage.removeItem("token");
+  setUser(null);
+  setRecados([]);
+}
+
   const tilt = (i) => (i % 2 === 0 ? "-0.6deg" : "0.6deg");
+
+  if (!user) {
+    return <Login onLogin={setUser} />;
+  }
 
   return (
     <div style={styles.page}>
@@ -42,7 +84,23 @@ function App() {
       <header style={styles.header}>
         <span style={styles.kicker}>caderno de notas</span>
         <h1 style={styles.title}>Recados</h1>
+        <button onClick={sair} style={styles.logoutButton}>
+          Sair
+        </button>
       </header>
+
+      {erro && (
+        <div style={styles.alerta}>
+          <span>{erro}</span>
+          <button
+            onClick={() => setErro("")}
+            style={styles.alertaFechar}
+            aria-label="Fechar aviso"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <form onSubmit={criarRecado} style={styles.form}>
         <input
@@ -105,7 +163,8 @@ const styles = {
   },
   header: {
     textAlign: "center",
-    marginBottom: 36
+    marginBottom: 36,
+    position: "relative"
   },
   kicker: {
     display: "block",
@@ -121,6 +180,18 @@ const styles = {
     fontWeight: 400,
     color: "#2c2a26",
     margin: 0
+  },
+  logoutButton: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    background: "transparent",
+    border: "1px solid #c8c0ae",
+    borderRadius: 4,
+    padding: "6px 12px",
+    fontSize: 13,
+    color: "#5c5648",
+    cursor: "pointer"
   },
   form: {
     display: "flex",
@@ -225,7 +296,31 @@ const styles = {
     borderRadius: "50%",
     fontSize: 16,
     cursor: "pointer"
-  }
+  },
+
+  alerta: {
+    maxWidth: 420,
+    margin: "0 auto 18px",
+    background: "#fbeceb",
+    border: "1px solid #e3b3af",
+    color: "#8a342d",
+    padding: "10px 14px",
+    borderRadius: 4,
+    fontSize: 14,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12
+  },
+  alertaFechar: {
+    background: "transparent",
+    border: "none",
+    color: "#8a342d",
+    fontSize: 18,
+    lineHeight: 1,
+    cursor: "pointer",
+    padding: 0
+  },
 };
 
 const css = `
