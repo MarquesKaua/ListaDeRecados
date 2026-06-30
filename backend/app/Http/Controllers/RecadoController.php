@@ -14,28 +14,32 @@ class RecadoController extends Controller
         return response()->json($recados);
     }
 
-    public function store(Request $request)
+
+public function store(Request $request)
 {
-    $recado = Recado::create([
-        'titulo' => $request->titulo,
-        'texto' => $request->texto,
+    $dados = $request->validate([
+        'titulo' => 'required|max:255',
+        'texto' => 'required',
     ]);
+
+    $recado = Recado::create($dados);
 
     return response()->json($recado, 201);
 }
 
 public function update(Request $request, $id)
 {
+    $dados = $request->validate([
+        'titulo' => 'required|max:255',
+        'texto' => 'required',
+    ]);
+
     $recado = Recado::findOrFail($id);
 
-    $recado->update([
-        'titulo' => $request->titulo,
-        'texto' => $request->texto,
-    ]);
+    $recado->update($dados);
 
     return response()->json($recado);
 }
-
 public function destroy($id)
 {
     $recado = Recado::findOrFail($id);
