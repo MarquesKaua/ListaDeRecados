@@ -37,6 +37,7 @@ CREATE DATABASE recados;
 ## 2. Como rodar o backend
 
 ```bash
+cd listaderecados
 cd backend
 composer install
 cp .env.example .env
@@ -70,6 +71,7 @@ O backend sobe em `http://localhost:8000`.
 Em outro terminal:
 
 ```bash
+cd listaderecados
 cd frontend
 npm install
 npm start
