@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Recado extends Model
 {
-    protected $fillable = ['titulo', 'texto'];
+    protected $fillable = ['titulo', 'texto', 'user_id'];
 }

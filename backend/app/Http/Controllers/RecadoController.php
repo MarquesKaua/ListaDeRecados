@@ -22,7 +22,11 @@ public function store(Request $request)
         'texto' => 'required',
     ]);
 
-    $recado = Recado::create($dados);
+    $recado = Recado::create([
+        'titulo' => $dados['titulo'],
+        'texto' => $dados['texto'],
+        'user_id' => 1
+    ]);
 
     return response()->json($recado, 201);
 }
